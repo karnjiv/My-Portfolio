@@ -21,16 +21,21 @@ CREATE TABLE public.full_data (
     CONSTRAINT constraint_name CHECK (condition)
 );
 
+
 CREATE TABLE post_data AS (
   SELECT text, date, hashtags, source
   FROM full_data
 );
+
+
 CREATE TABLE user_data AS (
   SELECT user_name, user_location, user_description, user_created, user_followers, user_friends, date, hashtags, source
   FROM full_data
 );
 
+
 -- Most commonly occuring words (excluding stop words)
+
 
 WITH tokenized_text_data AS (
   SELECT regexp_split_to_table(lower(text), '\s+') AS word
@@ -46,7 +51,9 @@ WHERE word NOT IN (SELECT stop_word FROM stop_words)
 GROUP BY word
 ORDER BY frequency DESC;
 
+
 -- Removing emojis from the text column to allow for easier analysis
+
 
 WITH cleaned_text_data AS (
   SELECT regexp_replace(text, '[^\x00-\x7F]+', '', 'g') AS cleaned_text
@@ -55,21 +62,27 @@ WITH cleaned_text_data AS (
 SELECT *
 FROM cleaned_text_data;
 
+
 -- Most popular locations
+
 
 SELECT user_location, COUNT(user_name) AS location_count
 FROM full_data
 GROUP BY user_location
 ORDER BY COUNT(user_name) DESC
 
+
 -- Most popular posting devices
+
 
 SELECT source, COUNT(*)
 FROM full_data
 GROUP BY source
 ORDER BY count DESC
 
+
 -- Hashtag count
+
 
 SELECT hashtags, (LENGTH(hashtags) - LENGTH(REPLACE(hashtags, ',', '')) + 1) AS hashtag_count
 FROM full_data
@@ -78,31 +91,42 @@ ORDER BY hashtag_count DESC NULLS LAST
 
 -- Time-series analysis
 
+
 SELECT date_trunc('day', date), count(*)
 FROM full_data
 GROUP  BY 1
 ORDER BY date_trunc ASC
 
+
 -- Most popular posting times
+
 
 SELECT date_trunc('hour', date), count(*) as posts
 FROM full_data
 GROUP  BY 1
 ORDER BY date_trunc ASC
+
+
+-- OR
+
 
 SELECT date_trunc('hour', date), count(*) as posts
 FROM full_data
 GROUP  BY date_trunc
 ORDER BY count(*) DESC
 
+
 -- Most popular hashtags
+
 
 SELECT unnest(string_to_array(REGEXP_REPLACE(hashtags,'[^\w,]+','','g'), ',')) as tags, count(1)
 FROM full_data
 GROUP BY tags
 ORDER BY count(1) desc
 
+
 -- OR
+
 
 WITH unnested AS
 (SELECT
@@ -113,7 +137,9 @@ FROM unnested
 GROUP BY hashtag
 ORDER BY COUNT(hashtag) DESC;
 
+
 -- Window Function ROW_NUMBER to rank words (stop words excluded)
+
 
 WITH tokenized_text_data AS (
   SELECT regexp_split_to_table(lower(text), '\s+') AS word
